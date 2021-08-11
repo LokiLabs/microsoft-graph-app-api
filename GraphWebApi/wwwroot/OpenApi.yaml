@@ -1,0 +1,687 @@
+openapi: 3.0.3
+info:
+  title: "DevX API"
+  version: "20210528.1"
+servers:
+  - url: https://graphexplorerapi.azurewebsites.net/
+    description: Main server
+  - url: https://graphexplorerapi-staging.azurewebsites.net/
+    description: Staging server
+  - url: https://localhost:44399/
+    description: Local test server
+  - url: https://localhost:5001/
+    description: Local test server
+
+paths:
+  /snippetgenerator:
+    post:
+      tags:
+        - snippets
+      summary: Show language code snippets
+      description: Obtains a language code snippet from an example HttpRequestMessage sent out to the graph endpoint
+      operationId: snippetgenerator.ListSnippets
+      parameters:
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum:
+              - C#
+              - Javascript
+              - Java
+              - Objective-C
+            default: C#
+      requestBody:
+        description: HTTP request message to be translated into code.
+        content:
+          text/message;version=1.1;msgtype=request:
+            schema:
+              type: string
+            examples:
+              GetUserProfile:
+                value: |
+                  GET /v1.0/users/joe@tenant.com HTTP/1.1 
+                  Host: https://graph.microsoft.com  
+                  Accept: application/json
+              SendMail:
+                value: |
+                  POST /v1.0/me/sendMail 
+                  Host: https://graph.microsoft.com 
+                  Content-type: application/json
+                  {
+                    "message": {
+                      "subject": "Meet for lunch?",
+                      "body": {
+                        "contentType": "Text",
+                        "content": "The new cafeteria is open."
+                      },
+                      "toRecipients": [
+                        {
+                          "emailAddress": {
+                            "address": "fannyd@contoso.onmicrosoft.com"
+                          }
+                        }
+                      ],
+                      "ccRecipients": [
+                        {
+                          "emailAddress": {
+                            "address": "danas@contoso.onmicrosoft.com"
+                          }
+                        }
+                      ]
+                    },
+                    "saveToSentItems": "false"
+                  }
+      responses:
+        "200":
+          description: Generated language snippet
+          content:
+            "text/plain":
+              examples:
+                "C# GetUserProfile":
+                  value: |
+                    var user = await client.Me.Request().GetAsync();
+        "400":
+          description: Bad request
+  /samples:
+    get:
+      tags:
+        - samples
+      summary: Sample queries
+      description: Get all Microsoft Graph API sample queries from Azure blob or a specified GitHub repository. Filter by category, humanName or tip.
+      operationId: samples.ListSamples
+      parameters:
+        - name: search # /samples?search=user
+          in: query
+          schema:
+            type: string
+          required: false
+          description: category, humanName or tip.
+        - name: org
+          in: query
+          schema:
+            type: string
+          required: false
+          description: Organization that a GitHub repo belongs to.
+        - name: branchName
+          in: query
+          schema:
+            type: string
+          required: false
+          description: The target branch in the target GitHub repo.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/sample"
+              example:
+                SampleQueries:
+                  - id: b4fbcb7a-b80e-4254-b37c-224b8513badb
+                    category: Applications
+                    method: GET
+                    humanName: retrieve application properties
+                    requestUrl: "/v1.0/applications/{application-id}"
+                    docLink: "https://docs.microsoft.com/en-us/graph/api/application-get?view=graph-rest-1.0&tabs=http"
+                    headers: null
+                    tip: "This query requires an application id. To find the ID of an application&#44; you can run: GET https://graph.microsoft.com/v1.0/applications"
+                    postBody: null
+                    skipTest: false
+        "204":
+          description: No content
+        "404":
+          description: Not found
+        "500":
+          description: Internal server error
+  /samples/{id}:
+    get:
+      tags:
+        - samples
+      summary: Sample query by id
+      description: Get a specific sample query by its id.
+      operationId: samples.GetSample
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Sample query id
+        - name: org
+          in: query
+          schema:
+            type: string
+          required: false
+          description: Organization that a GitHub repo belongs to.
+        - name: branchName
+          in: query
+          schema:
+            type: string
+          required: false
+          description: The target branch in the target GitHub repo.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/sample"
+              example:
+                SampleQueries:
+                  - id: b4fbcb7a-b80e-4254-b37c-224b8513badb
+                    category: Applications
+                    method: GET
+                    humanName: retrieve application properties
+                    requestUrl: "/v1.0/applications/{application-id}"
+                    docLink: "https://docs.microsoft.com/en-us/graph/api/application-get?view=graph-rest-1.0&tabs=http"
+                    headers: null
+                    tip: "This query requires an application id. To find the ID of an application&#44; you can run: GET https://graph.microsoft.com/v1.0/applications"
+                    postBody: null
+                    skipTest: false
+        "204":
+          description: No content
+        "404":
+          description: Not found
+        "500":
+          description: Internal server error
+  /permissions: #  GET /permissions?requesturl=/me/memberof&method=GET&scopetype=DelegatedWork
+    get:
+      tags:
+        - permissions
+      summary: Permissions information
+      description: Get list of permissions information that enable access to a specified resource (or all the Microsoft Graph API endpoints), from least to most privileged.
+      operationId: permissions.ListPermissions
+      parameters:
+        - name: requestUrl
+          in: query
+          schema:
+            type: string
+          required: false
+          description: Microsoft Graph API endpoint url.
+        - name: method
+          in: query
+          schema:
+            type: string
+            enum:
+              - GET
+              - PUT
+              - POST
+              - PATCH
+              - DELETE
+          required: false
+          description: Http method
+        - name: scopeType
+          in: query
+          schema:
+            type: string
+            enum:
+              - DelegatedWork
+              - DelegatedPersonal
+              - Application
+            default: DelegatedWork
+          required: false
+          description: A valid Microsoft Graph API permission category.
+        - name: org
+          in: query
+          schema:
+            type: string
+          required: false
+          description: Organization that a GitHub repo belongs to.
+        - name: branchName
+          in: query
+          schema:
+            type: string
+          required: false
+          description: The target branch in the target GitHub repo.
+      responses:
+        "200":
+          description: Ordered array of permissions that enable access to a specified resource (or all the Microsoft Graph API endpoints), from least to most privileged along with detailed information about the permissions.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/permission"
+              example:
+                - value: Mail.ReadBasic
+                  consentDisplayName: Read user basic mail
+                  consentDescription: "Allows the app to read email in the signed-in user's mailbox except body, previewBody, attachments and any extended properties."
+                  isAdmin: false
+                - value: Mail.Read
+                  consentDisplayName: "Read your mail "
+                  consentDescription: "Allows the app to read email in your mailbox. "
+                  isAdmin: false
+                - value: Mail.ReadWrite
+                  consentDisplayName: "Read and write access to your mail "
+                  consentDescription: "Allows the app to read, update, create and delete email in your mailbox. Does not include permission to send mail. "
+                  isAdmin: false
+        "400":
+          description: Bad request
+        "404":
+          description: Not found
+        "500":
+          description: Internal server error
+  /changes:
+    get:
+      tags:
+        - changes
+      summary: Change log information
+      description: Get change log information.
+      operationId: changelog.ListChangelog
+      parameters:
+        - name: requestUrl
+          in: query
+          required: false
+          schema:
+            type: string # https://graph.microsoft.com/v1.0/me/
+          description: Microsoft Graph API endpoint url.
+        - name: graphVersion
+          in: query
+          required: false
+          schema:
+            type: string
+            default: v1.0
+          description: The target Microsoft Graph API version.
+        - name: workload
+          in: query
+          required: false
+          schema:
+            type: string
+          description: The owning team of the target Microsoft Graph API endpoint.
+        - name: daysRange
+          in: query
+          required: false
+          schema:
+            type: number # 90
+            default: 0
+          description: The number of days in which to get the change log data for.
+        - name: startDate
+          in: query
+          required: false
+          schema:
+            type: string # YYYY-MM-DD
+          description: The start date for when to start fetching the change log data.
+        - name: endDate
+          in: query
+          required: false
+          schema:
+            type: string # YYYY-MM-DD
+          description: The end date for when to stop fetching the change log data.
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+          description: The page number to return.
+        - name: pageLimit
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: The number of change log entries to be included in a single page.
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/changeLog"
+              example:
+                changelog:
+                  - ChangeList:
+                      - Id: 6a6c7aa0-4b67-4d07-9ebf-c2bc1bcef553
+                        ApiChange: Resource
+                        ChangedApiName: "ediscoveryCase,reviewSet,reviewSetQuery"
+                        ChangeType: Addition
+                        Description: "Introduced the compliance eDiscovery API, including the [ediscoveryCase](https://docs.microsoft.com/en-us/graph/api/resources/ediscoverycase?view=graph-rest-beta), [reviewSet](https://docs.microsoft.com/en-us/graph/api/resources/reviewset?view=graph-rest-beta), and [reviewSetQuery](https://docs.microsoft.com/en-us/graph/api/resources/reviewsetquery?view=graph-rest-beta), and operations."
+                        Target: "ediscoveryCase,reviewSet,reviewSetQuery"
+                    Id: 6a6c7aa0-4b67-4d07-9ebf-c2bc1bcef553
+                    Cloud: prd
+                    Version: beta
+                    CreatedDateTime: "2020-07-01T00:00:00.000Z"
+                    WorkloadArea: Compliance
+                    SubArea: eDiscovery
+
+        "404":
+          description: Not found
+        "500":
+          description: Internal server error
+  /openapi: # /openapi?url=/users&openApiVersion=3&graphVersion=beta&format=json&style=GEAutocomplete
+    get:
+      tags:
+        - openapi
+      summary: Microsoft Graph OpenAPI document
+      description: Get the Microsoft Graph API metadata CSDL document as an OpenAPI document.
+      operationId: openapi.GetDocument
+      parameters:
+        - name: url
+          in: query
+          schema:
+            type: string
+          required: false
+          description: Microsoft Graph API endpoint url.
+        - name: tags
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+          required: false
+          description: Comma separated list of tags.
+        - name: operationIds
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+          required: false
+          description: Comma separated list of OperationIds or * for all the OperationIds.
+        - name: openApiVersion
+          in: query
+          schema:
+            type: string
+          required: false
+          description: The target OpenAPI version.
+        - name: graphVersion
+          in: query
+          schema:
+            type: string
+          required: false
+          description: The target Microsoft Graph API version.
+        - name: style
+          in: query
+          schema:
+            type: string
+            enum:
+              - Plain
+              - PowerPlatform
+              - PowerShell
+              - GEAutocomplete
+            default: Plain
+          required: false
+          description: The client for which the OpenAPI document needs to be formatted for.
+        - name: title
+          in: query
+          schema:
+            type: string
+            default: Partial Graph API
+          required: false
+          description: The OpenAPI document title.
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum:
+              - json
+              - yaml
+            default: json
+          description: The OpenAPI document output format.
+        - name: forceRefresh
+          in: query
+          schema:
+            type: boolean
+            default: false
+          required: false
+          description: Reload the OpenAPI document.
+      responses:
+        "200":
+          description: List of operations associated to a tag/operationIds/url
+          content:
+            application/vnd.oai.openapi+json: {} # JSON
+            application/vnd.oai.openapi: {} # YAML
+    post:
+      tags:
+        - openapi
+      summary: Convert a given CSDL document into an OpenAPI document.
+      description: OpenAPI document from a CSDL document
+      operationId: openapi.PostDocument
+      parameters:
+        - name: url
+          in: query
+          schema:
+            type: string
+          required: false
+          description: An API endpoint url.
+        - name: tags
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+          required: false
+          description: Comma separated list of tag names.
+        - name: operationIds
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+          required: false
+          description: Comma separated list of OperationIds or * for all the OperationIds.
+        - name: openApiVersion
+          in: query
+          schema:
+            type: string
+          required: false
+          description: The target OpenAPI version.
+        - name: graphVersion
+          in: query
+          schema:
+            type: string
+          required: false
+          description: The target API version.
+        - name: style
+          in: query
+          schema:
+            type: string
+            enum:
+              - Plain
+              - PowerPlatform
+              - PowerShell
+              - GEAutocomplete
+            default: Plain
+          required: false
+          description: The client for which the OpenAPI document needs to be formatted for.
+        - name: title
+          in: query
+          schema:
+            type: string
+            default: Partial Graph API
+          required: false
+          description: The OpenAPI document title.
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum:
+              - json
+              - yaml
+            default: json
+          description: The OpenAPI document output format.
+        - name: forceRefresh
+          in: query
+          schema:
+            type: boolean
+            default: false
+          required: false
+          description: Reload the OpenAPI document.
+      responses:
+        "200":
+          description: List of operations associated to a tag/operationIds/url
+          content:
+            application/vnd.oai.openapi: {} # YAML
+            application/vnd.oai.openapi+json: {} # JSON
+  /openapi/operations:
+    get:
+      tags:
+        - openapi.operations
+      summary: All Microsoft Graph operations
+      description: Get all the operations from the Microsoft Graph API metadata CSDL document.
+      operationId: openapi.operations.ListOperations
+      parameters:
+        - name: openApiVersion
+          in: query
+          schema:
+            type: string
+          required: false
+          description: The target OpenAPI version.
+        - name: graphVersion
+          in: query
+          schema:
+            type: string
+          required: false
+          description: The target Microsoft Graph API version.
+        - name: style
+          in: query
+          schema:
+            type: string
+            enum:
+              - Plain
+              - PowerPlatform
+              - PowerShell
+              - GEAutocomplete
+            default: Plain
+          required: false
+          description: The client for which the OpenAPI document needs to be formatted for.
+        - name: title
+          in: query
+          schema:
+            type: string
+            default: Partial Graph API
+          required: false
+          description: The OpenAPI document title.
+        - name: format
+          in: query
+          schema:
+            type: string
+            enum:
+              - json
+              - yaml
+            default: json
+          description: The OpenAPI document output format.
+        - name: forceRefresh
+          in: query
+          schema:
+            type: boolean
+            default: false
+          required: false
+          description: Reload the OpenAPI document.
+      responses:
+        "200":
+          description: OK
+          content:
+            text/html: {}
+components:
+  schemas:
+    sample:
+      type: array
+      items:
+        type: object
+        required:
+          - category
+          - method
+          - humanName
+          - requestUrl
+        properties:
+          id:
+            type: string
+          category:
+            type: string
+          method:
+            type: string
+            enum:
+              - GET
+              - PUT
+              - POST
+              - DELETE
+              - PATCH
+          humanName:
+            type: string
+          requestUrl:
+            type: string
+          docLink:
+            type: string
+          tip:
+            type: string
+          skipTest:
+            type: boolean
+          postBody:
+            type: string
+          headers:
+            type: array
+            items:
+              type: object
+              properties:
+                name:
+                  type: string
+                value:
+                  type: string
+    permission:
+      type: object
+      required:
+        - value
+        - consentDisplayName
+        - consentDescription
+        - isAdmin
+      properties:
+        value:
+          type: string
+        consentDisplayName:
+          type: string
+        consentDescription:
+          type: string
+        isAdmin:
+          type: string
+    changeLog:
+      type: array
+      items:
+        type: object
+        properties:
+          changeList:
+            type: array
+            items:
+              type: object
+              properties:
+                id:
+                  type: string
+                apiChange:
+                  type: string
+                changedApiName:
+                  type: string
+                changeType:
+                  type: string
+                description:
+                  type: string
+                target:
+                  type: string
+              required:
+                - id
+                - apiChange
+                - changedApiName
+                - changeType
+                - description
+                - target
+          id:
+            type: string
+          cloud:
+            type: string
+          version:
+            type: string
+          createdDateTime:
+            type: string
+          workloadArea:
+            type: string
+          subArea:
+            type: string
+        required:
+          - changeList
+          - id
+          - cloud
+          - version
+          - createdDateTime
+          - workloadArea
+          - subArea

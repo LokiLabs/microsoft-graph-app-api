@@ -16,7 +16,7 @@ namespace GraphWebApi
         public static async Task Main(string[] args)
         {
             var host = CreateWebHostBuilder(args).Build();
-            //var telemetryConfiguration = host.Services.GetRequiredService<TelemetryConfiguration>();
+            var telemetryConfiguration = host.Services.GetRequiredService<TelemetryConfiguration>();
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
@@ -28,7 +28,7 @@ namespace GraphWebApi
                     outputTemplate:
                     "[{Timestamp:HH:mm:ss} {Level}] {SourceContext}{NewLine}{Message:lj}{NewLine}{Exception}{NewLine}",
                     theme: AnsiConsoleTheme.Literate)
-                //.WriteTo.ApplicationInsights(telemetryConfiguration, TelemetryConverter.Events)
+                .WriteTo.ApplicationInsights(telemetryConfiguration, TelemetryConverter.Events)
                 .CreateLogger();
             try
             {

@@ -2,7 +2,6 @@
 using Microsoft.Graph;
 using System.Net.Http.Headers;
 
-
 namespace GraphExplorerAppModeService.Services
 {
     public class GraphAppAuthProvider : IGraphAppAuthProvider
